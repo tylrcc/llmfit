@@ -7,7 +7,14 @@
 [![CI](https://github.com/tylrcc/llmfit/actions/workflows/ci.yml/badge.svg)](https://github.com/tylrcc/llmfit/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/)
-[![Works with Ollama](https://img.shields.io/badge/works%20with-Ollama-black.svg)](https://ollama.com)
+
+#### Benchmarks every local runtime
+
+[![Ollama](https://img.shields.io/badge/Ollama-✓-000000?logo=ollama&logoColor=white)](https://ollama.com)
+[![llama.cpp](https://img.shields.io/badge/llama.cpp-✓-2ea44f)](https://github.com/ggml-org/llama.cpp)
+[![MLX](https://img.shields.io/badge/MLX-✓-2ea44f)](https://github.com/ml-explore/mlx-lm)
+[![LM Studio](https://img.shields.io/badge/LM_Studio-✓-2ea44f)](https://lmstudio.ai)
+[![vLLM](https://img.shields.io/badge/vLLM-✓-2ea44f)](https://github.com/vllm-project/vllm)
 
 </div>
 
@@ -31,6 +38,8 @@ Q2_K        15.3 GB  ~ tight
 ```
 
 100% local. No telemetry, no account, no network call that leaves your machine.
+
+> **🔌 Works with every local runtime.** The hardware report needs no server at all. `llmfit bench` measures real tokens/sec on [Ollama](https://ollama.com), [llama.cpp](https://github.com/ggml-org/llama.cpp), [MLX](https://github.com/ml-explore/mlx-lm), [LM Studio](https://lmstudio.ai), or [vLLM](https://github.com/vllm-project/vllm). One flag: `--backend llamacpp`, `--backend mlx`, ... See [bench](#llmfit-bench-model--real-tokenssec).
 
 ## Install
 
