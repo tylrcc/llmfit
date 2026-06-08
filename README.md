@@ -104,6 +104,24 @@ generate (decode)  22.9 tok/s (96 tokens)
 
 With no model given, it benchmarks your smallest generative model.
 
+**Not on Ollama?** `bench` measures any OpenAI-compatible local server too, by streaming a completion and timing tokens as they arrive:
+
+```bash
+# llama.cpp:  llama-server -m model.gguf --port 8080
+# MLX:        mlx_lm.server --port 8080
+$ llmfit bench my-model --backend llamacpp
+$ llmfit bench my-model --backend mlx
+$ llmfit bench my-model --backend openai --url http://localhost:8080/v1
+```
+```text
+              model  my-model
+            backend  llama.cpp  http://localhost:8080/v1
+time to first token  0.35 s
+  generate (decode)  21.3 tok/s (64 tokens)
+```
+
+> The hardware report (`llmfit`, `llmfit can`) is runtime-agnostic and needs no server at all. The Ollama-specific views (`models`, `top`) read Ollama's API; `bench` works with Ollama, llama.cpp, MLX, LM Studio, and vLLM.
+
 ## `llmfit top` — htop for your local models
 
 A live view of system memory and CPU, plus the models currently resident in Ollama: how much memory each holds, whether it's on GPU or spilled to CPU, and when it will unload.

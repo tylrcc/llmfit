@@ -9,7 +9,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
-from . import __version__, catalog, monitor
+from . import __version__, backends as bk, catalog, monitor
 from .fit import can_run, fit_installed, recommend
 from .hardware import Hardware, detect, memory_budget_gb
 from .ollama import Ollama, OllamaError
@@ -177,25 +177,54 @@ def models() -> None:
 @click.argument("model", required=False)
 @click.option("-n", "--tokens", default=128, show_default=True,
               help="How many tokens to generate for the measurement.")
-def bench(model: str | None, tokens: int) -> None:
-    """Measure real prefill/decode tokens-per-second for a MODEL."""
-    client = Ollama()
-    if not client.is_up():
-        err.print(f"[red]error[/] Ollama not reachable at {client.host}. "
-                  "Start it with `ollama serve`.")
-        sys.exit(1)
-    if not model:
-        # Smallest generative model (skip embedding-only models, which can't
-        # answer /api/generate).
-        candidates = [m for m in client.installed()
-                      if "embed" not in m.name.lower()]
-        if not candidates:
-            err.print("[red]error[/] no generative models installed to benchmark.")
-            sys.exit(1)
-        model = candidates[-1].name  # smallest, fastest to load
-        console.print(f"[dim]no model given — benchmarking smallest: {model}[/]")
+@click.option("--backend", default="ollama", show_default=True,
+              help=f"Runtime to benchmark: {', '.join(bk.BACKEND_CHOICES)}.")
+@click.option("--url", "base_url", default=None, metavar="URL",
+              help="Override the backend base URL (e.g. http://localhost:8080/v1).")
+def bench(model: str | None, tokens: int, backend: str, base_url: str | None) -> None:
+    """Measure real tokens-per-second for a MODEL on any local runtime.
 
-    with console.status(f"[bold]benchmarking[/] {model} ..."):
+    Defaults to Ollama; use --backend llamacpp / mlx / lmstudio / vllm / openai
+    (with --url) to benchmark an OpenAI-compatible server instead.
+    """
+    try:
+        kind, label, endpoint = bk.resolve(backend, base_url)
+    except OllamaError as exc:
+        err.print(f"[red]error[/] {exc}")
+        sys.exit(1)
+
+    if kind == "ollama":
+        client = Ollama()
+        if not client.is_up():
+            err.print(f"[red]error[/] Ollama not reachable at {client.host}. "
+                      "Start it with `ollama serve`.")
+            sys.exit(1)
+        if not model:
+            # Smallest generative model (skip embedding-only models).
+            candidates = [m for m in client.installed()
+                          if "embed" not in m.name.lower()]
+            if not candidates:
+                err.print("[red]error[/] no generative models installed to benchmark.")
+                sys.exit(1)
+            model = candidates[-1].name
+            console.print(f"[dim]no model given — benchmarking smallest: {model}[/]")
+    else:
+        client = bk.OpenAICompatBench(base_url=endpoint, label=label)
+        if not client.is_up():
+            err.print(f"[red]error[/] {label} not reachable at {endpoint}. "
+                      "Start your server, e.g. `llama-server -m model.gguf "
+                      "--port 8080` or `mlx_lm.server --port 8080`.")
+            sys.exit(1)
+        if not model:
+            served = client.models()
+            if not served:
+                err.print(f"[red]error[/] {label} reports no served model; "
+                          "pass one explicitly.")
+                sys.exit(1)
+            model = served[0]
+            console.print(f"[dim]no model given — using served: {model}[/]")
+
+    with console.status(f"[bold]benchmarking[/] {model} on {label} ..."):
         try:
             r = client.benchmark(model, num_tokens=tokens)
         except OllamaError as exc:
@@ -206,9 +235,13 @@ def bench(model: str | None, tokens: int) -> None:
     tbl.add_column(style="bold cyan", justify="right")
     tbl.add_column()
     tbl.add_row("model", model)
-    tbl.add_row("load time", f"{r.load_seconds:.2f} s")
-    tbl.add_row("prompt (prefill)", f"{r.prompt_tps:.1f} tok/s "
-                                   f"[dim]({r.prompt_tokens} tokens)[/]")
+    tbl.add_row("backend", f"{label}  [dim]{endpoint}[/]")
+    if kind == "ollama":
+        tbl.add_row("load time", f"{r.load_seconds:.2f} s")
+        tbl.add_row("prompt (prefill)", f"{r.prompt_tps:.1f} tok/s "
+                                       f"[dim]({r.prompt_tokens} tokens)[/]")
+    else:
+        tbl.add_row("time to first token", f"{r.load_seconds:.2f} s")
     tbl.add_row("generate (decode)", f"[bold green]{r.eval_tps:.1f} tok/s[/] "
                                     f"[dim]({r.eval_tokens} tokens)[/]")
     console.print(tbl)
