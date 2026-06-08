@@ -158,7 +158,7 @@ Contributions welcome, especially sharper footprint math and more hardware backe
 
 ## License
 
-[MIT](LICENSE) © tuwfy
+[MIT](LICENSE) © tylrcc
 
 <div align="center">
 <sub>Stop downloading models that won't run. If llmfit saved you a 20GB mistake, consider leaving a ⭐.</sub>

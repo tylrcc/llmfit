@@ -9,7 +9,7 @@ description = "Right-size local LLMs for your hardware: find out what your machi
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.9"
-authors = [{ name = "tuwfy" }]
+authors = [{ name = "tylrcc" }]
 keywords = ["llm", "ollama", "local-llm", "hardware", "vram", "quantization", "benchmark", "cli", "gpu"]
 classifiers = [
     "Development Status :: 4 - Beta",
